@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maqsadlarim</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+:root {
+  --bg:#0f0f1a; --card:#1a1a2e; --card2:#16213e;
+  --accent:#7c6ff7; --green:#4ade80; --red:#f87171;
+  --blue:#60a5fa; --yellow:#fbbf24; --pink:#f472b6;
+  --text:#e2e8f0; --muted:#94a3b8; --border:rgba(255,255,255,0.08);
+}
+body { background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; min-height:100vh; padding-bottom:100px; }
+
+.header { background:linear-gradient(135deg,#1a1a3e,#0f0f1a); padding:20px 16px 24px; position:relative; overflow:hidden; }
+.header::before { content:''; position:absolute; top:-60px; right:-60px; width:220px; height:220px; background:radial-gradient(circle,rgba(124,111,247,0.25),transparent 70%); border-radius:50%; }
+.header::after { content:''; position:absolute; bottom:-40px; left:-40px; width:160px; height:160px; background:radial-gradient(circle,rgba(244,114,182,0.15),transparent 70%); border-radius:50%; }
+.header-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+.header-title { font-size:20px; font-weight:800; }
+.header-sub { font-size:12px; color:var(--muted); margin-top:3px; }
+.stats-chips { display:flex; gap:10px; flex-wrap:wrap; }
+.chip { background:rgba(255,255,255,0.08); border-radius:20px; padding:6px 14px; font-size:12px; font-weight:600; }
+.chip.green { color:var(--green); }
+.chip.yellow { color:var(--yellow); }
+.chip.red { color:var(--red); }
+
+.goals-list { padding:16px; display:flex; flex-direction:column; gap:14px; }
+
+.goal-card { background:var(--card); border-radius:20px; overflow:hidden; border:1px solid var(--border); position:relative; }
+.goal-card.completed { border-color:rgba(74,222,128,0.3); }
+.goal-img { width:100%; height:160px; object-fit:cover; display:block; }
+.goal-img-placeholder { width:100%; height:140px; display:flex; align-items:center; justify-content:center; font-size:64px; background:linear-gradient(135deg,#1e1e3a,#2a1a3e); }
+.goal-body { padding:14px 16px; }
+.goal-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; }
+.goal-name { font-size:17px; font-weight:700; flex:1; margin-right:10px; }
+.goal-actions { display:flex; gap:6px; }
+.goal-btn { background:transparent; border:1px solid var(--border); border-radius:8px; padding:5px 9px; font-size:13px; cursor:pointer; color:var(--muted); }
+.goal-btn:hover { border-color:var(--accent); color:var(--accent); }
+.goal-btn.del:hover { border-color:var(--red); color:var(--red); }
+
+.goal-meta { display:flex; gap:12px; margin-bottom:12px; flex-wrap:wrap; }
+.goal-meta-item { font-size:12px; color:var(--muted); display:flex; align-items:center; gap:4px; }
+
+.progress-wrap { margin-bottom:10px; }
+.progress-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+.progress-pct { font-size:13px; font-weight:700; }
+.progress-amounts { font-size:12px; color:var(--muted); }
+.progress-bar { height:10px; background:rgba(255,255,255,0.08); border-radius:5px; overflow:hidden; }
+.progress-fill { height:100%; border-radius:5px; transition:width 0.8s cubic-bezier(0.34,1.56,0.64,1); position:relative; overflow:hidden; }
+.progress-fill::after { content:''; position:absolute; top:0; left:-100%; width:100%; height:100%; background:linear-gradient(90deg,transparent,rgba(255,255,255,0.3),transparent); animation:shimmer 2s infinite; }
+@keyframes shimmer { to { left:100%; } }
+
+.goal-footer { display:flex; justify-content:space-between; align-items:center; }
+.goal-days { font-size:12px; color:var(--muted); }
+.goal-days span { color:var(--text); font-weight:600; }
+.add-money-btn { background:rgba(124,111,247,0.2); border:1px solid rgba(124,111,247,0.4); border-radius:10px; padding:7px 14px; font-size:13px; font-weight:600; color:var(--accent); cursor:pointer; }
+.add-money-btn:hover { background:rgba(124,111,247,0.3); }
+
+.completed-badge { position:absolute; top:12px; right:12px; background:rgba(74,222,128,0.9); color:#000; border-radius:20px; padding:4px 12px; font-size:12px; font-weight:700; }
+
+.motivation { background:linear-gradient(135deg,rgba(124,111,247,0.15),rgba(244,114,182,0.1)); border:1px solid rgba(124,111,247,0.2); border-radius:14px; padding:14px; margin:0 16px 14px; }
+.motivation-text { font-size:13px; color:var(--muted); line-height:1.6; }
+.motivation-text strong { color:var(--text); }
+
+.add-btn-wrap { position:fixed; bottom:16px; left:16px; right:16px; z-index:50; }
+.add-btn { width:100%; background:linear-gradient(135deg,var(--accent),#a78bfa); color:white; border:none; border-radius:14px; padding:15px; font-size:15px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 4px 20px rgba(124,111,247,0.4); }
+
+.empty-state { text-align:center; padding:60px 20px; color:var(--muted); }
+.empty-state .emoji { font-size:64px; margin-bottom:16px; }
+.empty-state h3 { font-size:18px; font-weight:700; color:var(--text); margin-bottom:8px; }
+.empty-state p { font-size:14px; line-height:1.6; }
+
+/* MODAL */
+.modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:100; align-items:flex-end; justify-content:center; overflow-y:auto; }
+.modal-overlay.open { display:flex; }
+.modal { background:var(--card2); border-radius:24px 24px 0 0; padding:24px 20px 40px; width:100%; max-width:500px; margin-top:auto; }
+.modal-handle { width:40px; height:4px; background:var(--border); border-radius:2px; margin:0 auto 20px; }
+.modal-title { font-size:18px; font-weight:700; margin-bottom:20px; }
+.input-group { margin-bottom:14px; }
+.input-label { font-size:12px; color:var(--muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.5px; display:flex; justify-content:space-between; }
+.input-field { width:100%; background:var(--card); border:1px solid var(--border); border-radius:12px; padding:13px 14px; color:var(--text); font-size:15px; outline:none; }
+.input-field:focus { border-color:var(--accent); }
+.emoji-grid { display:flex; flex-wrap:wrap; gap:8px; }
+.emoji-btn { width:44px; height:44px; border-radius:10px; border:1px solid var(--border); background:var(--card); font-size:22px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+.emoji-btn.selected { border-color:var(--accent); background:rgba(124,111,247,0.2); }
+.img-preview { width:100%; height:120px; border-radius:12px; object-fit:cover; margin-top:8px; display:none; }
+.modal-btns { display:flex; gap:10px; margin-top:16px; }
+.submit-btn { flex:1; padding:15px; border-radius:14px; border:none; font-size:16px; font-weight:700; color:white; cursor:pointer; background:linear-gradient(135deg,var(--accent),#a78bfa); }
+.cancel-btn { padding:15px 20px; border-radius:14px; border:1px solid var(--border); background:transparent; color:var(--muted); font-size:15px; cursor:pointer; }
+
+/* ADD MONEY MODAL */
+.add-money-modal { background:var(--card2); border-radius:24px 24px 0 0; padding:24px 20px 40px; width:100%; max-width:500px; margin-top:auto; }
+.forecast-box { background:rgba(124,111,247,0.1); border:1px solid rgba(124,111,247,0.2); border-radius:12px; padding:12px 14px; margin-bottom:14px; font-size:13px; color:var(--muted); line-height:1.7; }
+.forecast-box strong { color:var(--accent); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div>
+      <div class="header-title">🎯 Maqsadlarim</div>
+      <div class="header-sub">Orzu qil. Reja tuz. Yet.</div>
+    </div>
+  </div>
+  <div class="stats-chips">
+    <div class="chip green" id="chip-active">0 faol</div>
+    <div class="chip yellow" id="chip-total">0 jami</div>
+    <div class="chip" id="chip-saved" style="color:var(--accent)">0 so'm yig'ilgan</div>
+  </div>
+</div>
+
+<div id="motivation-wrap"></div>
+<div class="goals-list" id="goals-list">
+  <div class="empty-state">
+    <div class="emoji">🌟</div>
+    <h3>Hali maqsad yo'q</h3>
+    <p>Birinchi maqsadingizni qo'shing.<br>Har bir katta natija kichik qadamdan boshlanadi.</p>
+  </div>
+</div>
+
+<div class="add-btn-wrap">
+  <button class="add-btn" onclick="openGoalModal(null)">
+    <span style="font-size:20px">🎯</span> Yangi maqsad
+  </button>
+</div>
+
+<!-- GOAL MODAL -->
+<div class="modal-overlay" id="goal-modal" onclick="closeGoalModalOutside(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="goal-modal-title">Yangi maqsad</div>
+
+    <div class="input-group">
+      <div class="input-label">Maqsad nomi</div>
+      <input class="input-field" id="g-name" placeholder="Masalan: iPhone 16, Sayohat, Mashina...">
+    </div>
+
+    <div class="input-group">
+      <div class="input-label">Emoji tanlang</div>
+      <div class="emoji-grid" id="emoji-grid">
+        📱 💻 🚗 ✈️ 🏠 📚 👟 🎮 💍 🎓 🏋️ 🌍 💎 🎸 🏖️ 🚀
+      </div>
+    </div>
+
+    <div class="input-group">
+      <div class="input-label">Rasm yuklash (ixtiyoriy)</div>
+      <input type="file" id="g-image" accept="image/*" onchange="previewImage()" style="display:none">
+      <button onclick="document.getElementById('g-image').click()" style="width:100%;background:var(--card);border:1px dashed var(--border);border-radius:12px;padding:13px;color:var(--muted);font-size:14px;cursor:pointer;">📷 Rasm tanlash</button>
+      <img id="img-preview" class="img-preview">
+    </div>
+
+    <div class="input-group">
+      <div class="input-label">Maqsad summasi (so'm)</div>
+      <input class="input-field" type="number" id="g-target" placeholder="5 000 000" oninput="updateForecast()">
+    </div>
+
+    <div class="input-group">
+      <div class="input-label">Hozir qancha bor? (so'm)</div>
+      <input class="input-field" type="number" id="g-current" placeholder="0" oninput="updateForecast()">
+    </div>
+
+    <div class="input-group">
+      <div class="input-label">Oylik ajratma (so'm)</div>
+      <input class="input-field" type="number" id="g-monthly" placeholder="500 000" oninput="updateForecast()">
+    </div>
+
+    <div class="forecast-box" id="forecast-box" style="display:none"></div>
+
+    <div class="modal-btns">
+      <button class="cancel-btn" onclick="closeGoalModal()">Bekor</button>
+      <button class="submit-btn" onclick="saveGoal()">Saqlash</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD MONEY MODAL -->
+<div class="modal-overlay" id="money-modal" onclick="closeMoneyModalOutside(event)">
+  <div class="add-money-modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">💰 Pul qo'shish</div>
+    <div class="forecast-box" id="money-forecast"></div>
+    <div class="input-group">
+      <div class="input-label">Qo'shilgan summa (so'm)</div>
+      <input class="input-field" type="number" id="m-amount" placeholder="100 000" oninput="updateMoneyForecast()">
+    </div>
+    <div class="modal-btns">
+      <button class="cancel-btn" onclick="closeMoneyModal()">Bekor</button>
+      <button class="submit-btn" onclick="addMoney()">Qo'shish</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const tg = window.Telegram && window.Telegram.WebApp;
+if (tg) { tg.ready(); tg.expand(); }
+
+let goals = JSON.parse(localStorage.getItem('fin_goals') || '[]');
+let editingGoalId = null;
+let addingMoneyToId = null;
+let selectedEmoji = '🎯';
+let imageData = null;
+
+const EMOJIS = ['📱','💻','🚗','✈️','🏠','📚','👟','🎮','💍','🎓','🏋️','🌍','💎','🎸','🏖️','🚀'];
+const MOTIVATIONS = [
+  'Har kuni ozgina qo\'shsangiz, natija katta bo\'ladi. Sabr — eng yaxshi investitsiya!',
+  'Maqsadingizni ko\'z oldingizda tutib yuring. Har bir so\'m sizni unga yaqinlashtiradi.',
+  'Bugun qiyin, ertaga oson. Hozir tejagan pulingiz kelajakda ozodlik beradi.',
+  'Kichik qadamlar katta yo\'lni bosib o\'tadi. Davom eting!',
+  'Orzu ulug\' bo\'lsin, reja aniq bo\'lsin, harakat doimiy bo\'lsin!',
+];
+
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+function fmt(n) { return Math.round(n).toLocaleString('uz-UZ'); }
+function save() { localStorage.setItem('fin_goals', JSON.stringify(goals)); }
+
+function buildEmojiGrid() {
+  const grid = document.getElementById('emoji-grid');
+  grid.innerHTML = EMOJIS.map(e =>
+    `<button class="emoji-btn${e===selectedEmoji?' selected':''}" onclick="selectEmoji('${e}',this)">${e}</button>`
+  ).join('');
+}
+
+function selectEmoji(e, btn) {
+  selectedEmoji = e;
+  document.querySelectorAll('.emoji-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+function previewImage() {
+  const file = document.getElementById('g-image').files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    imageData = e.target.result;
+    const prev = document.getElementById('img-preview');
+    prev.src = imageData;
+    prev.style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+
+function updateForecast() {
+  const target = parseFloat(document.getElementById('g-target').value) || 0;
+  const current = parseFloat(document.getElementById('g-current').value) || 0;
+  const monthly = parseFloat(document.getElementById('g-monthly').value) || 0;
+  const box = document.getElementById('forecast-box');
+  if (!target || !monthly) { box.style.display='none'; return; }
+  const remaining = Math.max(0, target - current);
+  const months = Math.ceil(remaining / monthly);
+  const pct = target > 0 ? Math.round(current/target*100) : 0;
+  const date = new Date();
+  date.setMonth(date.getMonth() + months);
+  const dateStr = date.toLocaleDateString('uz-UZ', {year:'numeric',month:'long'});
+  box.style.display = 'block';
+  box.innerHTML = `
+    📊 <strong>${pct}%</strong> tayyor (${fmt(current)} so'm)<br>
+    ⏳ Taxminan <strong>${months} oy</strong> kerak<br>
+    📅 Maqsadga yetish: <strong>${dateStr}</strong><br>
+    💡 Oyiga ${fmt(monthly)} so'm ajratsangiz!
+  `;
+}
+
+function updateMoneyForecast() {
+  const goal = goals.find(g=>g.id===addingMoneyToId);
+  if (!goal) return;
+  const add = parseFloat(document.getElementById('m-amount').value) || 0;
+  const newCurrent = goal.current + add;
+  const remaining = Math.max(0, goal.target - newCurrent);
+  const pct = Math.min(100, Math.round(newCurrent/goal.target*100));
+  const months = goal.monthly > 0 ? Math.ceil(remaining/goal.monthly) : '?';
+  document.getElementById('money-forecast').innerHTML = `
+    📈 Qo'shgandan keyin: <strong>${fmt(newCurrent)} so'm</strong><br>
+    ✅ Bajarildi: <strong>${pct}%</strong><br>
+    ⏳ Qolgan: <strong>${fmt(remaining)} so'm</strong> (~${months} oy)
+  `;
+}
+
+function openGoalModal(id) {
+  editingGoalId = id;
+  imageData = null;
+  document.getElementById('img-preview').style.display = 'none';
+  document.getElementById('forecast-box').style.display = 'none';
+  buildEmojiGrid();
+  if (id) {
+    const g = goals.find(x=>x.id===id);
+    if (!g) return;
+    document.getElementById('goal-modal-title').textContent = 'Tahrirlash';
+    document.getElementById('g-name').value = g.name;
+    document.getElementById('g-target').value = g.target;
+    document.getElementById('g-current').value = g.current;
+    document.getElementById('g-monthly').value = g.monthly || '';
+    selectedEmoji = g.emoji || '🎯';
+    if (g.image) { document.getElementById('img-preview').src=g.image; document.getElementById('img-preview').style.display='block'; imageData=g.image; }
+    buildEmojiGrid();
+    updateForecast();
+  } else {
+    document.getElementById('goal-modal-title').textContent = 'Yangi maqsad';
+    document.getElementById('g-name').value = '';
+    document.getElementById('g-target').value = '';
+    document.getElementById('g-current').value = '';
+    document.getElementById('g-monthly').value = '';
+  }
+  document.getElementById('goal-modal').classList.add('open');
+}
+
+function closeGoalModal() { document.getElementById('goal-modal').classList.remove('open'); }
+function closeGoalModalOutside(e) { if(e.target.id==='goal-modal') closeGoalModal(); }
+
+function saveGoal() {
+  const name = document.getElementById('g-name').value.trim();
+  const target = parseFloat(document.getElementById('g-target').value);
+  const current = parseFloat(document.getElementById('g-current').value) || 0;
+  const monthly = parseFloat(document.getElementById('g-monthly').value) || 0;
+  if (!name || !target) { alert('Nom va summa kiritish shart!'); return; }
+
+  if (editingGoalId) {
+    const idx = goals.findIndex(g=>g.id===editingGoalId);
+    if (idx!==-1) goals[idx] = { ...goals[idx], name, target, current, monthly, emoji:selectedEmoji, image:imageData||goals[idx].image };
+  } else {
+    goals.unshift({ id:uid(), name, target, current, monthly, emoji:selectedEmoji, image:imageData||null, createdAt:new Date().toISOString() });
+  }
+  save(); closeGoalModal(); render();
+  if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+}
+
+function deleteGoal(id) {
+  if (!confirm('Bu maqsadni o\'chirishni tasdiqlaysizmi?')) return;
+  goals = goals.filter(g=>g.id!==id);
+  save(); render();
+}
+
+function openMoneyModal(id) {
+  addingMoneyToId = id;
+  document.getElementById('m-amount').value = '';
+  const goal = goals.find(g=>g.id===id);
+  document.getElementById('money-forecast').innerHTML = `
+    🎯 <strong>${goal.name}</strong><br>
+    💰 Hozir: <strong>${fmt(goal.current)} so'm</strong> / ${fmt(goal.target)} so'm
+  `;
+  document.getElementById('money-modal').classList.add('open');
+}
+
+function closeMoneyModal() { document.getElementById('money-modal').classList.remove('open'); addingMoneyToId=null; }
+function closeMoneyModalOutside(e) { if(e.target.id==='money-modal') closeMoneyModal(); }
+
+function addMoney() {
+  const amount = parseFloat(document.getElementById('m-amount').value);
+  if (!amount || amount<=0) return;
+  const idx = goals.findIndex(g=>g.id===addingMoneyToId);
+  if (idx===-1) return;
+  goals[idx].current = Math.min(goals[idx].target, goals[idx].current + amount);
+  if (goals[idx].current >= goals[idx].target) goals[idx].completedAt = new Date().toISOString();
+  save(); closeMoneyModal(); render();
+  if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+}
+
+function getGradient(pct) {
+  if (pct >= 100) return 'linear-gradient(90deg,#4ade80,#22c55e)';
+  if (pct >= 70) return 'linear-gradient(90deg,#60a5fa,#3b82f6)';
+  if (pct >= 40) return 'linear-gradient(90deg,#7c6ff7,#a78bfa)';
+  return 'linear-gradient(90deg,#f472b6,#ec4899)';
+}
+
+function render() {
+  const active = goals.filter(g=>g.current<g.target).length;
+  const totalSaved = goals.reduce((s,g)=>s+g.current,0);
+  document.getElementById('chip-active').textContent = active + ' faol';
+  document.getElementById('chip-total').textContent = goals.length + ' jami';
+  document.getElementById('chip-saved').textContent = fmt(totalSaved) + " so'm yig'ilgan";
+
+  const motivWrap = document.getElementById('motivation-wrap');
+  if (goals.length > 0) {
+    const msg = MOTIVATIONS[Math.floor(Math.random()*MOTIVATIONS.length)];
+    motivWrap.innerHTML = `<div class="motivation"><div class="motivation-text">💡 ${msg}</div></div>`;
+  } else motivWrap.innerHTML = '';
+
+  const list = document.getElementById('goals-list');
+  if (!goals.length) {
+    list.innerHTML = `<div class="empty-state"><div class="emoji">🌟</div><h3>Hali maqsad yo'q</h3><p>Birinchi maqsadingizni qo'shing.<br>Har bir katta natija kichik qadamdan boshlanadi.</p></div>`;
+    return;
+  }
+
+  list.innerHTML = goals.map(g => {
+    const pct = Math.min(100, Math.round(g.current/g.target*100));
+    const remaining = Math.max(0, g.target-g.current);
+    const months = g.monthly>0 ? Math.ceil(remaining/g.monthly) : null;
+    const completed = g.current >= g.target;
+    const grad = getGradient(pct);
+
+    const imgSection = g.image
+      ? `<img class="goal-img" src="${g.image}" alt="${g.name}">`
+      : `<div class="goal-img-placeholder">${g.emoji||'🎯'}</div>`;
+
+    const daysText = completed
+      ? '🎉 Maqsadga yetdingiz!'
+      : months !== null
+        ? `Qoldi: <span>~${months} oy</span> (oyiga ${fmt(g.monthly)} so'm)`
+        : `Qolgan: <span>${fmt(remaining)} so'm</span>`;
+
+    return `<div class="goal-card${completed?' completed':''}">
+      ${imgSection}
+      ${completed?'<div class="completed-badge">✅ Bajarildi!</div>':''}
+      <div class="goal-body">
+        <div class="goal-top">
+          <div class="goal-name">${g.emoji||'🎯'} ${g.name}</div>
+          <div class="goal-actions">
+            <button class="goal-btn" onclick="openGoalModal('${g.id}')">✏️</button>
+            <button class="goal-btn del" onclick="deleteGoal('${g.id}')">🗑</button>
+          </div>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-top">
+            <span class="progress-pct" style="color:${pct>=100?'var(--green)':pct>=70?'var(--blue)':'var(--accent)'}">${pct}%</span>
+            <span class="progress-amounts">${fmt(g.current)} / ${fmt(g.target)} so'm</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width:${pct}%;background:${grad}"></div>
+          </div>
+        </div>
+        <div class="goal-footer">
+          <div class="goal-days">${daysText}</div>
+          ${!completed?`<button class="add-money-btn" onclick="openMoneyModal('${g.id}')">+ Pul qo'sh</button>`:'<span style="font-size:20px">🏆</span>'}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+render();
+</script>
+</body>
+</html>
